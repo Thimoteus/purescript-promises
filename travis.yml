@@ -1,0 +1,15 @@
+language: node_js
+dist: trusty
+sudo: required
+node_js: stable
+install:
+  - npm install bower -g
+  - npm install
+  - bower install
+script:
+  - pulp build
+after_success:
+- >-
+  test $TRAVIS_TAG &&
+  echo $GITHUB_TOKEN | pulp login &&
+  echo y | pulp publish --no-push
