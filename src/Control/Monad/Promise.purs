@@ -1,4 +1,4 @@
-module Data.Promise
+module Control.Monad.Promise
   ( Promise
   , PurePromise
   , then'
@@ -20,6 +20,8 @@ import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
 import Data.Monoid (class Monoid, mempty)
 
 foreign import data Promise :: # Effect -> Type -> Type
+
+type PurePromise a = forall r. Promise r a
 
 foreign import thenImpl
   :: forall r a b c. Fn3
@@ -85,8 +87,6 @@ runPromise
   -> Promise eff a
   -> Eff eff Unit
 runPromise onSucc onErr p = runFn3 promiseToEffImpl p onSucc onErr
-
-type PurePromise a = forall r. Promise r a
 
 instance functorPromise :: Functor (Promise r) where
   map :: forall r a b. (a -> b) -> Promise r a -> Promise r b
