@@ -21,6 +21,14 @@ exports.promiseToEffImpl = function (promise, onFulfilled, onRejected) {
   }
 }
 
+exports.allImpl = function (arr) {
+  return Promise.all(arr);
+}
+
+exports.raceImpl = function (arr) {
+  return Promise.race(arr);
+}
+
 exports.delayImpl = function (a, ms) {
   return new Promise(function (resolve, reject) {
     setTimeout(resolve, ms, a);

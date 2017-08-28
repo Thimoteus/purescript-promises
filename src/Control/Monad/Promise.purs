@@ -5,6 +5,8 @@ module Control.Monad.Promise
   , resolve
   , catch
   , reject
+  , race
+  , all
   , delay
   , runPromise
   ) where
@@ -16,8 +18,11 @@ import Control.Monad.Eff.Class (class MonadEff)
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Data.Array as Array
+import Data.Foldable (class Foldable)
 import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
 import Data.Monoid (class Monoid, mempty)
+import Data.Unfoldable (class Unfoldable)
 
 foreign import data Promise :: # Effect -> Type -> Type
 
@@ -65,6 +70,16 @@ foreign import rejectImpl :: forall r b c. c -> Promise r b
 reject :: forall r b. Error -> Promise r b
 reject = rejectImpl
 
+foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
+
+all :: forall f r a. Foldable f => Unfoldable f => f (Promise r a) -> Promise r (f a)
+all = map Array.toUnfoldable <<< allImpl <<< Array.fromFoldable
+
+foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a
+
+race :: forall f r a. Foldable f => f (Promise r a) -> Promise r a
+race = raceImpl <<< Array.fromFoldable
+
 foreign import delayImpl
   :: forall r a. Fn2
   a
@@ -84,9 +99,9 @@ foreign import promiseToEffImpl
 runPromise
   :: forall eff a b. (a -> Eff eff b)
   -> (Error -> Eff eff b)
-  -> Promise eff a
+  -> (Unit -> Promise eff a)
   -> Eff eff Unit
-runPromise onSucc onErr p = runFn3 promiseToEffImpl p onSucc onErr
+runPromise onSucc onErr p = runFn3 promiseToEffImpl (p unit) onSucc onErr
 
 instance functorPromise :: Functor (Promise r) where
   map :: forall r a b. (a -> b) -> Promise r a -> Promise r b
