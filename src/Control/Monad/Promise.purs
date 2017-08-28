@@ -137,6 +137,7 @@ instance monoidPromise :: Monoid a => Monoid (Promise r a) where
   mempty :: forall r a. Monoid a => Promise r a
   mempty = resolve mempty
 
+foreign import liftEffImpl :: forall eff a. Eff eff a -> Promise eff a
 instance monadEffPromise :: MonadEff r (Promise r) where
   liftEff :: forall eff a. Eff eff a -> Promise eff a
-  liftEff eff = resolve (unsafePerformEff eff)
+  liftEff = liftEffImpl

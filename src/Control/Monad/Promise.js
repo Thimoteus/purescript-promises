@@ -29,6 +29,18 @@ exports.raceImpl = function (arr) {
   return Promise.race(arr);
 }
 
+exports.liftEffImpl = function (eff) {
+  return new Promise(function (onSucc, onErr) {
+    try {
+      result = eff();
+    } catch (err) {
+      onErr(err);
+      return null;
+    }
+    onSucc(result);
+  });
+}
+
 exports.delayImpl = function (a, ms) {
   return new Promise(function (resolve, reject) {
     setTimeout(resolve, ms, a);
