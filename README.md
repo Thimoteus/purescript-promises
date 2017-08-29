@@ -67,5 +67,5 @@ main
 `bower install --save purescript-promises`
 
 ## See also
-[purescript-aff-promise](https://github.com/nwolverson/purescript-aff-promise)
-[purescript-aff](https://github.com/slamdata/purescript-aff)
+* [purescript-aff-promise](https://github.com/nwolverson/purescript-aff-promise)
+* [purescript-aff](https://github.com/slamdata/purescript-aff)
