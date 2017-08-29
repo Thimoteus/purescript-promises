@@ -27,15 +27,15 @@ prom1 = do
 prom2 :: Promise.Deferred => Promise.Promise AppEff Unit
 prom2 = Promise.resolve "hello" # Promise.then' \ a -> Console.log a
 
-prom3 :: Promise.Deferred => Promise.Promise AppEff Int
+prom3 :: Promise.Deferred => Promise.Promise AppEff String
 prom3 = Promise.promise k
   where
-  k onSucc _ = onSucc 5
+  k onSucc _ = onSucc "this shouldn't be shown on console"
 
 prom4 :: Promise.Deferred => Promise.Promise AppEff Unit
 prom4 = do
-  five <- prom3
-  Console.logShow five
+  msg <- prom3
+  Console.log msg
 
 onError :: forall r. Error -> Eff (console :: CONSOLE | r) Unit
 onError _ = log "oh noes!"

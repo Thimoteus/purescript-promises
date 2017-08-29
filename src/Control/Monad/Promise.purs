@@ -60,7 +60,7 @@ then' = flip thenn reject
 foreign import resolveImpl
   :: forall r a. a -> Promise r a
 
-resolve :: forall r a. Deferred => a -> Promise r a
+resolve :: forall r a. a -> Promise r a
 resolve = resolveImpl
 
 foreign import catchImpl
@@ -90,6 +90,10 @@ all = map Array.toUnfoldable <<< allImpl <<< Array.fromFoldable
 
 foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a
 
+-- | Note that while promise semantics say that `race xs` resolves to the first
+-- | `x` in `xs` to resolve, `race xs` won't terminate until each promise is
+-- | settled.
+-- | In addition, if `Array.fromFoldable xs` is `[]`, `race xs` will never settle.
 race :: forall f r a. Deferred => Foldable f => f (Promise r a) -> Promise r a
 race = raceImpl <<< Array.fromFoldable
 
