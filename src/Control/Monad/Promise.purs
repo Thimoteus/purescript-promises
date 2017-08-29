@@ -33,9 +33,9 @@ foreign import data Promise :: # Effect -> Type -> Type
 type PurePromise a = forall r. Promise r a
 
 foreign import promiseImpl :: forall r a b c.
-  (Fn2 (a -> c) (b -> c) c) -> Promise r a
+  (Fn2 (a -> Eff r Unit) (b -> Eff r Unit) (Eff r Unit)) -> Promise r a
 
-promise :: forall r a c. Deferred => ((a -> c) -> (Error -> c) -> c) -> Promise r a
+promise :: forall r a c. Deferred => ((a -> Eff r Unit) -> (Error -> Eff r Unit) -> Eff r Unit) -> Promise r a
 promise k = promiseImpl (mkFn2 k)
 
 foreign import thenImpl
