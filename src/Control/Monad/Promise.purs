@@ -1,6 +1,7 @@
 module Control.Monad.Promise
   ( Promise
   , PurePromise
+  , promise
   , then'
   , resolve
   , catch
@@ -16,17 +17,23 @@ import Prelude
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Class (class MonadEff)
 import Control.Monad.Eff.Exception (Error)
-import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array as Array
 import Data.Foldable (class Foldable)
-import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
+import Data.Function.Uncurried (Fn2, Fn3, mkFn2, runFn2, runFn3)
 import Data.Monoid (class Monoid, mempty)
+import Data.Time.Duration (Milliseconds)
 import Data.Unfoldable (class Unfoldable)
 
 foreign import data Promise :: # Effect -> Type -> Type
 
 type PurePromise a = forall r. Promise r a
+
+foreign import promiseImpl :: forall r a b c.
+  (Fn2 (a -> c) (b -> c) c) -> Promise r a
+
+promise :: forall r a c. ((a -> c) -> (Error -> c) -> c) -> Promise r a
+promise k = promiseImpl (mkFn2 k)
 
 foreign import thenImpl
   :: forall r a b c. Fn3
@@ -83,10 +90,10 @@ race = raceImpl <<< Array.fromFoldable
 foreign import delayImpl
   :: forall r a. Fn2
   a
-  Int
+  Milliseconds
   (Promise r a)
 
-delay :: forall r a. Int -> a -> Promise r a
+delay :: forall r a. Milliseconds -> a -> Promise r a
 delay = flip (runFn2 delayImpl)
 
 foreign import promiseToEffImpl

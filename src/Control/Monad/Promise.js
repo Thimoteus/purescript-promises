@@ -34,11 +34,14 @@ exports.liftEffImpl = function (eff) {
     try {
       result = eff();
     } catch (err) {
-      onErr(err);
-      return null;
+      return onErr(err);
     }
-    onSucc(result);
+    return onSucc(result);
   });
+}
+
+exports.promiseImpl = function (callback) {
+  return new Promise(callback);
 }
 
 exports.delayImpl = function (a, ms) {
