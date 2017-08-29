@@ -6,7 +6,7 @@ exports.catchImpl = function (promise, f) {
   return promise.catch(f);
 }
 
-exports.resolve = function (a) {
+exports.resolveImpl = function (a) {
   return Promise.resolve(a);
 }
 

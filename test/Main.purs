@@ -14,25 +14,25 @@ type AppEff = (console :: CONSOLE)
 
 main :: Eff AppEff Unit
 main = do
-  NS.done onSuccess onError (NS.finally (prom2 unit) (log "hi"))
-  Promise.runPromise onSuccess onError prom2
+  Promise.runPromise onSuccess onError prom1
+  NS.done onSuccess onError (NS.finally prom2 (log "hi"))
 
-prom1 :: Unit -> Promise.Promise AppEff Unit
-prom1 _ = do
+prom1 :: Promise.Deferred => Promise.Promise AppEff Unit
+prom1 = do
   p1 <- pure "Now I'm here"
   Console.log "I'm here"
   Promise.delay (Milliseconds 1000.0) unit
   Console.log p1
 
-prom2 :: Unit -> Promise.Promise AppEff Unit
-prom2 _ = Promise.resolve "hello" # Promise.then' \ a -> Console.log a
+prom2 :: Promise.Deferred => Promise.Promise AppEff Unit
+prom2 = Promise.resolve "hello" # Promise.then' \ a -> Console.log a
 
-prom3 :: Promise.Promise AppEff Int
+prom3 :: Promise.Deferred => Promise.Promise AppEff Int
 prom3 = Promise.promise k
   where
   k onSucc _ = onSucc 5
 
-prom4 :: Promise.Promise AppEff Unit
+prom4 :: Promise.Deferred => Promise.Promise AppEff Unit
 prom4 = do
   five <- prom3
   Console.logShow five
