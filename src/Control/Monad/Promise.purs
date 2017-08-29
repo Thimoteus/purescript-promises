@@ -85,7 +85,7 @@ reject = rejectImpl
 
 foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
 
-all :: forall f r a. Deferred => Foldable f => Unfoldable f => f (Promise r a) -> Promise r (f a)
+all :: forall f g r a. Deferred => Foldable f => Unfoldable g => f (Promise r a) -> Promise r (g a)
 all = map Array.toUnfoldable <<< allImpl <<< Array.fromFoldable
 
 foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a

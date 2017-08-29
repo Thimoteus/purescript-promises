@@ -4,21 +4,19 @@ An alternative effect monad for PureScript.
 
 Use this for easy interop with existing promise-based JavaScript libraries.
 
-Work in progress!
-
 ## Usage
 
 With monadic `do` notation, or with promise-chaining notation. The following are
 equivalent:
 
 ```purescript
-myApply :: forall r a b. Promise r (a -> b) -> Promise a -> Promise b
+myApply :: forall r a b. Promise r (a -> b) -> Promise r a -> Promise r b
 myApply pab pa = do
   ab <- pab
   a <- pa
   pure (ab a)
 
-myApplyChained :: forall r a b. Promise r (a -> b) -> Promise a -> Promise b
+myApplyChained :: forall r a b. Promise r (a -> b) -> Promise r a -> Promise r b
 myApplyChained pab pa = pab # then' \ ab -> pa # then' \ a -> resolve (ab a)
 ```
 
@@ -34,25 +32,34 @@ var myApplyChained = function (pab, pa) {
 }
 ```
 
-see the `tests` folder.
+Also see the `tests` folder.
 
-**Note**: As of this current version you'll need to "thunkify" your promises to
-keep them from prematurely running (Eff _ solves this problem by automatically
-wrapping every action in a JS function of no arguments):
+**Note**: While promises are [eager](https://medium.com/@avaq/broken-promises-2ae92780f33),
+this library provides the `Deferred` typeclass to ensure promises don't prematurely
+run their side-effects until safely consumed with `runPromise`, or the nonstandard
+`done`.
+
+### FFI example
+```javascript
+exports.myPromise = new Promise(function (resolve, reject) {
+  resolve(5);
+});
+```
 
 ```purescript
-myPromise :: forall r. Unit -> Promise (console :: CONSOLE | r) Unit
-myPromise = \ _ -> do
-  Console.log "hello"
-  delay 1000 unit
-  Console.log "goodbye"
+foreign import myPromise :: forall r. Promise r Int
+
+doSomething :: Deferred => Promise (console :: CONSOLE | r) Unit
+doSomething = do
+  p <- myPromise
+  Console.logShow p
 
 main :: forall r. Eff (console :: CONSOLE | r) Unit  
 main
   = runPromise
     (const (log "success callback"))
     (const (error "error callback"))
-    (myPromise unit)
+    doSomething
 ```
 
 ## Installation
@@ -61,3 +68,4 @@ main
 
 ## See also
 [purescript-aff-promise](https://github.com/nwolverson/purescript-aff-promise)
+[purescript-aff](https://github.com/slamdata/purescript-aff)
