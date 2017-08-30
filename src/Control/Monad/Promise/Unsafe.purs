@@ -1,4 +1,7 @@
-module Control.Monad.Promise.Unsafe where
+module Control.Monad.Promise.Unsafe
+  ( class Deferred
+  , undefer
+  ) where
 
 -- | A class for side-effecting promises which don't prematurely execute.
 class Deferred

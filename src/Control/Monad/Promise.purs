@@ -2,6 +2,7 @@ module Control.Monad.Promise
   ( Promise
   , PurePromise
   , promise
+  , then_
   , then'
   , resolve
   , catch
@@ -17,11 +18,13 @@ import Prelude
 
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Class (class MonadEff)
-import Control.Monad.Eff.Exception (Error)
+import Control.Monad.Eff.Exception (EXCEPTION, Error, throwException)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Control.Monad.Promise.Unsafe (class Deferred, undefer)
 import Control.Monad.Promise.Unsafe (class Deferred) as Exports
+import Control.Monad.Promise.Unsafe (class Deferred, undefer)
 import Data.Array as Array
+import Data.Either (Either(..))
 import Data.Foldable (class Foldable)
 import Data.Function.Uncurried (Fn2, Fn3, mkFn2, runFn2, runFn3)
 import Data.Monoid (class Monoid, mempty)
@@ -54,14 +57,22 @@ thenn
   -> (c -> Promise r b)
   -> Promise r a
   -> Promise r b
-thenn succ err p =
-  let then'' = runFn3 thenImpl
-   in then'' p succ err
+thenn succ err p = runFn3 thenImpl p succ err
 
 -- | Given a promise and a function which uses that promise's resolved value,
 -- | create a new promise that resolves to the function's output.
 then' :: forall r a b. Deferred => (a -> Promise r b) -> Promise r a -> Promise r b
 then' = flip thenn reject
+
+-- | Useful for when you need to transform an error and a resolved value into
+-- | the same type.
+then_
+  :: forall r a b. Deferred
+  => (a -> Promise r b)
+  -> (Error -> Promise r b)
+  -> Promise r a
+  -> Promise r b
+then_ = thenn
 
 foreign import resolveImpl
   :: forall r a. a -> Promise r a
@@ -91,6 +102,9 @@ foreign import rejectImpl :: forall r b c. c -> Promise r b
 -- | Throw an error into a promise.
 reject :: forall r b. Deferred => Error -> Promise r b
 reject = rejectImpl
+
+attempt :: forall r a. Deferred => Promise r a -> Promise r (Either Error a)
+attempt p = p # then_ (resolve <<< Right) (resolve <<< Left)
 
 foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
 
@@ -126,14 +140,22 @@ foreign import promiseToEffImpl
   (c -> Eff eff b)
   (Eff eff Unit)
 
--- | Consume a promise. Note that this is the only standard way to discharge the
--- | `Deferred` constraints you are likely to have.
+-- | Consume a promise. Note that this is the only standard way to safely
+-- | discharge the `Deferred` constraints you are likely to have.
 runPromise
   :: forall eff a b. (a -> Eff eff b)
   -> (Error -> Eff eff b)
   -> (Deferred => Promise eff a)
   -> Eff eff Unit
 runPromise onSucc onErr p = runFn3 promiseToEffImpl (undefer p) onSucc onErr
+
+yoloPromise :: forall eff a. (Deferred => Promise eff a) -> Eff (exception :: EXCEPTION | eff) Unit
+yoloPromise dp = addEx $ runPromise (const (pure unit)) (removeEx <<< throwException) dp
+  where
+    removeEx :: Eff (exception :: EXCEPTION | eff) Unit -> Eff eff Unit
+    removeEx = unsafeCoerceEff
+    addEx :: Eff eff Unit -> Eff (exception :: EXCEPTION | eff) Unit
+    addEx = unsafeCoerceEff
 
 instance functorPromise :: Deferred => Functor (Promise r) where
   map :: forall r a b. Deferred => (a -> b) -> Promise r a -> Promise r b
