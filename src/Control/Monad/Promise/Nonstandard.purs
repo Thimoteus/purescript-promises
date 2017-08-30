@@ -1,5 +1,6 @@
 module Control.Monad.Promise.Nonstandard
-  ( done
+  ( doneDeferred
+  , done
   , finally
   ) where
 
@@ -20,8 +21,11 @@ foreign import doneImpl
    (Eff r Unit)
 
 -- | Call's a promise's `done` method, causing execution.
-done :: forall r a c. (a -> Eff r c) -> (Error -> Eff r c) -> (Deferred => Promise r a) -> Eff r Unit
-done onSucc onErr p = runFn3 doneImpl onSucc onErr (undefer p)
+doneDeferred :: forall r a c. (a -> Eff r c) -> (Error -> Eff r c) -> (Deferred => Promise r a) -> Eff r Unit
+doneDeferred onSucc onErr p = runFn3 doneImpl onSucc onErr (undefer p)
+
+done :: forall r a c. (a -> Eff r c) -> (Error -> Eff r c) -> Promise r a -> Eff r Unit
+done onSucc onErr p = runFn3 doneImpl onSucc onErr p
 
 foreign import finallyImpl
   :: forall r a. Fn2 (Promise r a) (Eff r Unit) (Promise r a)

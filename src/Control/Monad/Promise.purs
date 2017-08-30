@@ -61,14 +61,14 @@ thenn succ err p = runFn3 thenImpl p succ err
 
 -- | Given a promise and a function which uses that promise's resolved value,
 -- | create a new promise that resolves to the function's output.
-then' :: forall r a b. Deferred => (a -> Promise r b) -> Promise r a -> Promise r b
+then' :: forall r a b. (a -> Promise r b) -> Promise r a -> Promise r b
 then' = flip thenn reject
 
 -- | Useful for when you need to transform an error and a resolved value into
 -- | the same type.
 then_
-  :: forall r a b. Deferred
-  => (a -> Promise r b)
+  :: forall r a b
+   . (a -> Promise r b)
   -> (Error -> Promise r b)
   -> Promise r a
   -> Promise r b
@@ -94,16 +94,16 @@ catchAnything
 catchAnything = runFn2 catchImpl
 
 -- | Deals with any errors that may be thrown by the given promise.
-catch :: forall r a. Deferred => Promise r a -> (Error -> Promise r a) -> Promise r a
+catch :: forall r a. Promise r a -> (Error -> Promise r a) -> Promise r a
 catch = catchAnything
 
 foreign import rejectImpl :: forall r b c. c -> Promise r b
 
 -- | Throw an error into a promise.
-reject :: forall r b. Deferred => Error -> Promise r b
+reject :: forall r b. Error -> Promise r b
 reject = rejectImpl
 
-attempt :: forall r a. Deferred => Promise r a -> Promise r (Either Error a)
+attempt :: forall r a. Promise r a -> Promise r (Either Error a)
 attempt p = p # then_ (resolve <<< Right) (resolve <<< Left)
 
 foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
@@ -111,7 +111,7 @@ foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
 -- | Run all promises in the given `Foldable`, returning a new promise which either
 -- | resolves to a collection of all the given promises' results, or rejects with
 -- | the first promise to reject.
-all :: forall f g r a. Deferred => Foldable f => Unfoldable g => f (Promise r a) -> Promise r (g a)
+all :: forall f g r a. Foldable f => Unfoldable g => f (Promise r a) -> Promise r (g a)
 all = map Array.toUnfoldable <<< allImpl <<< Array.fromFoldable
 
 foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a
@@ -120,7 +120,7 @@ foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a
 -- | `x` in `xs` to resolve, `race xs` won't terminate until each promise is
 -- | settled.
 -- | In addition, if `Array.fromFoldable xs` is `[]`, `race xs` will never settle.
-race :: forall f r a. Deferred => Foldable f => f (Promise r a) -> Promise r a
+race :: forall f r a. Foldable f => f (Promise r a) -> Promise r a
 race = raceImpl <<< Array.fromFoldable
 
 foreign import delayImpl
@@ -157,38 +157,38 @@ yoloPromise dp = addEx $ runPromise (const (pure unit)) (removeEx <<< throwExcep
     addEx :: Eff eff Unit -> Eff (exception :: EXCEPTION | eff) Unit
     addEx = unsafeCoerceEff
 
-instance functorPromise :: Deferred => Functor (Promise r) where
-  map :: forall r a b. Deferred => (a -> b) -> Promise r a -> Promise r b
+instance functorPromise :: Functor (Promise r) where
+  map :: forall r a b. (a -> b) -> Promise r a -> Promise r b
   map f p = p # then' \ a -> resolve (f a)
 
-instance applyPromise :: Deferred => Apply (Promise r) where
-  apply :: forall r a b. Deferred => Promise r (a -> b) -> Promise r a -> Promise r b
+instance applyPromise :: Apply (Promise r) where
+  apply :: forall r a b. Promise r (a -> b) -> Promise r a -> Promise r b
   apply pf pa =
     pf # then' \ f -> pa # then' \ a -> resolve (f a)
 
-instance applicativePromise :: Deferred => Applicative (Promise r) where
+instance applicativePromise :: Applicative (Promise r) where
   pure = resolve
 
-instance bindPromise :: Deferred => Bind (Promise r) where
-  bind :: forall r a b. Deferred => Promise r a -> (a -> Promise r b) -> Promise r b
+instance bindPromise :: Bind (Promise r) where
+  bind :: forall r a b. Promise r a -> (a -> Promise r b) -> Promise r b
   bind = flip then'
 
-instance monadPromise :: Deferred => Monad (Promise r)
+instance monadPromise :: Monad (Promise r)
 
-instance monadThrowPromise :: Deferred => MonadThrow Error (Promise r) where
-  throwError :: forall r a. Deferred => Error -> Promise r a
+instance monadThrowPromise :: MonadThrow Error (Promise r) where
+  throwError :: forall r a. Error -> Promise r a
   throwError = reject
 
-instance monadErrorPromise :: Deferred => MonadError Error (Promise r) where
-  catchError :: forall r a. Deferred => Promise r a -> (Error -> Promise r a) -> Promise r a
+instance monadErrorPromise :: MonadError Error (Promise r) where
+  catchError :: forall r a. Promise r a -> (Error -> Promise r a) -> Promise r a
   catchError = catch
 
-instance semigroupPromise :: (Deferred, Semigroup a) => Semigroup (Promise r a) where
-  append :: forall r a. Deferred => Semigroup a => Promise r a -> Promise r a -> Promise r a
+instance semigroupPromise :: Semigroup a => Semigroup (Promise r a) where
+  append :: forall r a. Semigroup a => Promise r a -> Promise r a -> Promise r a
   append a b = append <$> a <*> b
 
-instance monoidPromise :: (Deferred, Monoid a) => Monoid (Promise r a) where
-  mempty :: forall r a. Deferred => Monoid a => Promise r a
+instance monoidPromise :: Monoid a => Monoid (Promise r a) where
+  mempty :: forall r a. Monoid a => Promise r a
   mempty = resolve mempty
 
 foreign import liftEffImpl :: forall eff a. Eff eff a -> Promise eff a

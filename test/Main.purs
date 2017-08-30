@@ -15,7 +15,7 @@ type AppEff = (console :: CONSOLE)
 main :: Eff AppEff Unit
 main = do
   Promise.runPromise onSuccess onError prom1
-  NS.done onSuccess onError (NS.finally prom2 (log "hi"))
+  NS.doneDeferred onSuccess onError (NS.finally prom2 (log "hi"))
 
 prom1 :: Promise.Deferred => Promise.Promise AppEff Unit
 prom1 = do
@@ -30,7 +30,9 @@ prom2 = Promise.resolve "hello" # Promise.then' \ a -> Console.log a
 prom3 :: Promise.Deferred => Promise.Promise AppEff String
 prom3 = Promise.promise k
   where
-  k onSucc _ = onSucc "this shouldn't be shown on console"
+  k onSucc _ = do
+    log "this shouldn't be shown on console"
+    onSucc "nor this"
 
 prom4 :: Promise.Deferred => Promise.Promise AppEff Unit
 prom4 = do
