@@ -28,14 +28,18 @@ import Data.Monoid (class Monoid, mempty)
 import Data.Time.Duration (Milliseconds)
 import Data.Unfoldable (class Unfoldable)
 
+-- | A JavaScript promise parameterized (in the type) by a row of effects.
 foreign import data Promise :: # Effect -> Type -> Type
 
+-- | A promise with no side-effects.
 type PurePromise a = forall r. Promise r a
 
-foreign import promiseImpl :: forall r a b c.
+foreign import promiseImpl :: forall r a b.
   (Fn2 (a -> Eff r Unit) (b -> Eff r Unit) (Eff r Unit)) -> Promise r a
 
-promise :: forall r a c. Deferred => ((a -> Eff r Unit) -> (Error -> Eff r Unit) -> Eff r Unit) -> Promise r a
+-- | Create a promise by supplying a function which takes a success callback and
+-- | error callback as arguments, returning an `Eff`.
+promise :: forall r a. Deferred => ((a -> Eff r Unit) -> (Error -> Eff r Unit) -> Eff r Unit) -> Promise r a
 promise k = promiseImpl (mkFn2 k)
 
 foreign import thenImpl
@@ -54,12 +58,15 @@ thenn succ err p =
   let then'' = runFn3 thenImpl
    in then'' p succ err
 
+-- | Given a promise and a function which uses that promise's resolved value,
+-- | create a new promise that resolves to the function's output.
 then' :: forall r a b. Deferred => (a -> Promise r b) -> Promise r a -> Promise r b
 then' = flip thenn reject
 
 foreign import resolveImpl
   :: forall r a. a -> Promise r a
 
+-- | Create a promise from a value.
 resolve :: forall r a. a -> Promise r a
 resolve = resolveImpl
 
@@ -75,16 +82,21 @@ catchAnything
   -> Promise r a
 catchAnything = runFn2 catchImpl
 
+-- | Deals with any errors that may be thrown by the given promise.
 catch :: forall r a. Deferred => Promise r a -> (Error -> Promise r a) -> Promise r a
 catch = catchAnything
 
 foreign import rejectImpl :: forall r b c. c -> Promise r b
 
+-- | Throw an error into a promise.
 reject :: forall r b. Deferred => Error -> Promise r b
 reject = rejectImpl
 
 foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
 
+-- | Run all promises in the given `Foldable`, returning a new promise which either
+-- | resolves to a collection of all the given promises' results, or rejects with
+-- | the first promise to reject.
 all :: forall f g r a. Deferred => Foldable f => Unfoldable g => f (Promise r a) -> Promise r (g a)
 all = map Array.toUnfoldable <<< allImpl <<< Array.fromFoldable
 
@@ -103,6 +115,7 @@ foreign import delayImpl
   Milliseconds
   (Promise r a)
 
+-- | Cause a delay in execution, then resolve with the given value.
 delay :: forall r a. Deferred => Milliseconds -> a -> Promise r a
 delay = flip (runFn2 delayImpl)
 
@@ -113,6 +126,8 @@ foreign import promiseToEffImpl
   (c -> Eff eff b)
   (Eff eff Unit)
 
+-- | Consume a promise. Note that this is the only standard way to discharge the
+-- | `Deferred` constraints you are likely to have.
 runPromise
   :: forall eff a b. (a -> Eff eff b)
   -> (Error -> Eff eff b)
@@ -122,7 +137,7 @@ runPromise onSucc onErr p = runFn3 promiseToEffImpl (undefer p) onSucc onErr
 
 instance functorPromise :: Deferred => Functor (Promise r) where
   map :: forall r a b. Deferred => (a -> b) -> Promise r a -> Promise r b
-  map f promise = promise # then' \ a -> resolve (f a)
+  map f p = p # then' \ a -> resolve (f a)
 
 instance applyPromise :: Deferred => Apply (Promise r) where
   apply :: forall r a b. Deferred => Promise r (a -> b) -> Promise r a -> Promise r b

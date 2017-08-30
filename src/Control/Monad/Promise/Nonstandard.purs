@@ -19,11 +19,13 @@ foreign import doneImpl
    (Promise r a)
    (Eff r Unit)
 
+-- | Call's a promise's `done` method, causing execution.
 done :: forall r a c. (a -> Eff r c) -> (Error -> Eff r c) -> (Deferred => Promise r a) -> Eff r Unit
 done onSucc onErr p = runFn3 doneImpl onSucc onErr (undefer p)
 
 foreign import finallyImpl
   :: forall r a. Fn2 (Promise r a) (Eff r Unit) (Promise r a)
 
+-- | Run the given `Eff` once the given promise settles.
 finally :: forall r a. Deferred => Promise r a -> Eff r Unit -> Promise r a
 finally = runFn2 finallyImpl
