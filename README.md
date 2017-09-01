@@ -1,4 +1,5 @@
 # purescript-promises
+[![Build Status](https://travis-ci.org/Thimoteus/purescript-promises.svg?branch=master)](https://travis-ci.org/Thimoteus/purescript-promises)
 
 An alternative effect monad for PureScript.
 
@@ -96,10 +97,9 @@ promApply = p1 *> p2 *> p3
       Console.log "in"
 ```
 
-Note that the **only** difference between this example and the last
-is that we're using `(*>)` instead of implicit `(>>=)`s. And even
-though we added the `Deferred` constraint, it will still take 3
-seconds to run total -- not 6, as in the case of `promDelay`.
+Note that difference (between this example and the last) that we're using `(*>)`
+instead of implicit `(>>=)`s. And even though we added the `Deferred` constraint,
+it will still take 3 seconds to run total -- not 6, as it would be using do notation.
 
 ### FFI example
 ```javascript
