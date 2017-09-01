@@ -21,11 +21,11 @@ exports.finallyImpl = function (promise, eff) {
   if (typeof Promise.prototype['finally'] !== 'function') {
     Promise.prototype['finally'] = function (f) {
       return this.then(function (value) {
-        return Promise.resolve(f()).then(function () {
+        return Promise.resolve(f).then(function () {
           return value;
         });
       }, function (err) {
-        return Promise.resolve(f()).then(function () {
+        return Promise.resolve(f).then(function () {
           throw err;
         });
       });

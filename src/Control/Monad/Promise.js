@@ -16,8 +16,11 @@ exports.rejectImpl = function (a) {
 
 exports.promiseToEffImpl = function (promise, onFulfilled, onRejected) {
   return function () {
-    promise.then(onFulfilled(), onRejected());
-    return null;
+    return promise.then(function (a) {
+      return onFulfilled(a)();
+    }, function (err) {
+      return onRejected(err)();
+    });
   };
 };
 

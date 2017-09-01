@@ -103,8 +103,12 @@ foreign import rejectImpl :: forall r b c. c -> Promise r b
 reject :: forall r b. Deferred => Error -> Promise r b
 reject = rejectImpl
 
+-- | Same as `try`.
 attempt :: forall r a. Deferred => Promise r a -> Promise r (Either Error a)
-attempt p = p # then_ (resolve <<< Right) (resolve <<< Left)
+attempt p = p # then_ (\ a -> resolve (Right a)) (\ err -> resolve (Left err))
+
+apathize :: forall r a. Deferred => Promise r a -> Promise r Unit
+apathize p = const unit <$> attempt p
 
 foreign import allImpl :: forall r a. Array (Promise r a) -> Promise r (Array a)
 
@@ -123,11 +127,7 @@ foreign import raceImpl :: forall r a. Array (Promise r a) -> Promise r a
 race :: forall f r a. Deferred => Foldable f => f (Promise r a) -> Promise r a
 race = raceImpl <<< Array.fromFoldable
 
-foreign import delayImpl
-  :: forall r a. Fn2
-  a
-  Milliseconds
-  (Promise r a)
+foreign import delayImpl :: forall r a. Fn2 a Milliseconds (Promise r a)
 
 -- | Cause a delay in execution, then resolve with the given value.
 delay :: forall r a. Deferred => Milliseconds -> a -> Promise r a
@@ -163,8 +163,7 @@ instance functorPromise :: Deferred => Functor (Promise r) where
 
 instance applyPromise :: Deferred => Apply (Promise r) where
   apply :: forall r a b. Deferred => Promise r (a -> b) -> Promise r a -> Promise r b
-  apply pf pa =
-    pf # then' \ f -> pa # then' \ a -> resolve (f a)
+  apply pf pa = pf # then' \ f -> pa # then' \ a -> resolve (f a)
 
 instance applicativePromise :: Deferred => Applicative (Promise r) where
   pure = resolve
