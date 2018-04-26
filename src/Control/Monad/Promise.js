@@ -16,11 +16,12 @@ exports.rejectImpl = function (a) {
 
 exports.promiseToEffImpl = function (promise, onFulfilled, onRejected) {
   return function () {
-    return promise.then(function (a) {
-      return onFulfilled(a)();
-    }, function (err) {
-      return onRejected(err)();
+    promise.then(function(result) {
+      onFulfilled(result)();
+    }, function(err) {
+      onRejected(err)();
     });
+    return null;
   };
 };
 
