@@ -1,4 +1,4 @@
-module Control.Monad.Promise.Unsafe
+module Effect.Promise.Unsafe
   ( class Deferred
   , undefer
   ) where

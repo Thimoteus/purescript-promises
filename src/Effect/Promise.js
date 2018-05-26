@@ -14,7 +14,7 @@ exports.rejectImpl = function (a) {
   return Promise.reject(a);
 };
 
-exports.promiseToEffImpl = function (promise, onFulfilled, onRejected) {
+exports.promiseToEffectImpl = function (promise, onFulfilled, onRejected) {
   return function () {
     return promise.then(function (a) {
       return onFulfilled(a)();
@@ -32,7 +32,7 @@ exports.raceImpl = function (arr) {
   return Promise.race(arr);
 };
 
-exports.liftEffImpl = function (eff) {
+exports.liftEffectImpl = function (eff) {
   return new Promise(function (onSucc, onErr) {
     try {
       result = eff();
