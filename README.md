@@ -11,13 +11,13 @@ With monadic `do` notation, or with promise-chaining notation. The following are
 equivalent:
 
 ```purescript
-myApply :: forall r a b. Promise r (a -> b) -> Promise r a -> Promise r b
+myApply :: forall a b. Promise (a -> b) -> Promise a -> Promise b
 myApply pab pa = do
   ab <- pab
   a <- pa
   pure (ab a)
 
-myApplyChained :: forall r a b. Promise r (a -> b) -> Promise r a -> Promise r b
+myApplyChained :: forall a b. Promise (a -> b) -> Promise a -> Promise b
 myApplyChained pab pa = pab # then' \ ab -> pa # then' \ a -> resolve (ab a)
 ```
 
@@ -48,7 +48,7 @@ want to run:
 ### delay example
 
 ```purescript
-promDelay :: Deferred => Promise AppEff Unit
+promDelay :: Deferred => Promise Unit
 promDelay = do
   p1
   p2
@@ -72,26 +72,26 @@ In order to obtain the desired behavior of waiting one second between
 `p3`:
 
 ```purescript
-p1 :: Deferred => Promise AppEff Unit
+p1 :: Deferred => Promise Unit
 p1 = do ...
 ```
 
 ### parallel `(<*>)`
 
 ```purescript
-promApply :: Deferred => Promise AppEff Unit
+promApply :: Deferred => Promise Unit
 promApply = p1 *> p2 *> p3
   where
-    p1 :: Deferred => Promise AppEff Unit
+    p1 :: Deferred => Promise Unit
     p1 = do
       Console.log "<*> is"
       Promise.delay (Milliseconds 1000.0) unit
       Console.log "done"
-    p2 :: Deferred => Promise AppEff Unit
+    p2 :: Deferred => Promise Unit
     p2 = do
       Promise.delay (Milliseconds 3000.0) unit
       Console.log "parallel"
-    p3 :: Deferred => Promise AppEff Unit
+    p3 :: Deferred => Promise Unit
     p3 = do
       Promise.delay (Milliseconds 2000.0) unit
       Console.log "in"
@@ -109,14 +109,14 @@ exports.myPromise = new Promise(function (resolve, reject) {
 ```
 
 ```purescript
-foreign import myPromise :: forall r. Promise r Int
+foreign import myPromise :: Promise Int
 
-doSomething :: Deferred => Promise (console :: CONSOLE | r) Unit
+doSomething :: Deferred => Promise Unit
 doSomething = do
   p <- myPromise
   Console.logShow p
 
-main :: forall r. Eff (console :: CONSOLE | r) Unit  
+main :: Effect Unit  
 main
   = runPromise
     (const (log "success callback"))
