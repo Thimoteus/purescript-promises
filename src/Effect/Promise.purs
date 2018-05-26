@@ -28,7 +28,7 @@ import Effect.Exception (Error, throwException)
 import Effect.Promise.Unsafe (class Deferred) as Exports
 import Effect.Promise.Unsafe (class Deferred, undefer)
 
--- | A JavaScript promise parameterized (in the type) by a row of effects.
+-- | A JavaScript promise.
 foreign import data Promise :: Type -> Type
 
 foreign import promiseImpl :: forall a b.
