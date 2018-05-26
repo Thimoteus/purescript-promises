@@ -2,18 +2,16 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (Error, message, stack)
-import Control.Monad.Promise as Promise
-import Control.Monad.Promise.Console as Console
-import Control.Monad.Promise.Nonstandard as NS
+import Effect.Console (log)
+import Effect.Exception (Error, message, stack)
+import Effect.Promise as Promise
+import Effect.Promise.Console as Console
+import Effect.Promise.Nonstandard as NS
 import Data.Maybe (fromMaybe)
 import Data.Time.Duration (Milliseconds(..))
+import Effect (Effect)
 
-type AppEff = (console :: CONSOLE)
-
-type Promise a = Promise.Deferred => Promise.Promise AppEff a
+type Promise a = Promise.Deferred => Promise.Promise a
 
 print :: String -> Promise Unit
 print msg = do
@@ -21,7 +19,7 @@ print msg = do
   Console.log msg
   Console.log "-------------"
 
-main :: Eff AppEff Unit
+main :: Effect Unit
 main = Promise.runPromise onSuccess onError promiseTests
 
 promiseTests :: Promise Unit
@@ -95,12 +93,12 @@ promApply = p1 *> p2 *> p3
 nonstandardTest :: Promise Unit
 nonstandardTest = Promise.resolve "nonstandard test" # Promise.then' \ a -> Console.log a
 
-onError :: forall a r. Error -> Eff (console :: CONSOLE | r) Unit
+onError :: Error -> Effect Unit
 onError e
   = log $ "Uh oh, an error happened! " <>
     message e <>
     "\nStack: " <>
     fromMaybe "No stack." (stack e)
 
-onSuccess :: forall a r. a -> Eff (console :: CONSOLE | r) Unit
+onSuccess :: forall a. a -> Effect Unit
 onSuccess _ = log "Hello from Eff!"
