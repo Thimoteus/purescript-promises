@@ -23,10 +23,10 @@
     "url": "https://github.com/Thimoteus/purescript-promises/issues"
   },
   "homepage": "https://github.com/Thimoteus/purescript-promises#readme",
-  "dependencies": {
-    "purescript": "^0.11.6",
-    "purescript-psa": "^0.5.1",
-    "rimraf": "^2.6.1",
-    "pulp": "^11.0.2"
+  "devDependencies": {
+    "pulp": "^12.3.1",
+    "purescript": "^0.12.3",
+    "purescript-psa": "^0.7.3",
+    "rimraf": "^2.6.3"
   }
 }
