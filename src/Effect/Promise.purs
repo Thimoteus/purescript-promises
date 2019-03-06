@@ -7,6 +7,8 @@ module Effect.Promise
   , catch
   , reject
   , race
+  , attempt
+  , apathize
   , all
   , delay
   , runPromise
